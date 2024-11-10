@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Card, CardBody, CardFooter, Typography } from "@material-tailwind/react";
 import UploadImage from "../imageUpload/imageUpload";
 import Result from "../result/result";
@@ -10,12 +11,39 @@ interface Label {
 	Confidence: number;
 }
 
+interface Step {
+	id: string;
+	title: string;
+	description: string;
+}
+
 export function ImageChecker() {
+	const router = useRouter();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [uploadStatus, setUploadStatus] = useState<string>("");
 	const [labels, setLabels] = useState<Label[]>([]);
 	const [isSuccess, setIsSuccess] = useState<boolean>(false);
+	const [currentStepIndex, setCurrentStepIndex] = useState<number>(0); // Index of the current step
+
+	// Define the steps array
+	const steps: Step[] = [
+		{
+			id: "shoe",
+			title: "Driver Shoe Check (1/31)",
+			description: "Please upload an image of the driver's shoe",
+		},
+		{
+			id: "plate",
+			title: "Truck Plate Check (2/31)",
+			description: "Please upload an image of the truck plate number",
+		},
+		{
+			id: "mudguard",
+			title: "Truck Mudguard Check (3/31)",
+			description: "Please upload an image of the truck mudguard",
+		},
+	];
 
 	// Generate a preview URL when a file is selected
 	useEffect(() => {
@@ -39,12 +67,7 @@ export function ImageChecker() {
 			const base64Image = reader.result as string;
 			setUploadStatus("Uploading...");
 
-			let uploadData = {
-				imageUrl: "",
-				objectKey: "",
-			};
-
-			uploadData.objectKey = "user-uploads/1731159494389.jpg"; // Placeholder value for testing
+			let uploadData = { imageUrl: "", objectKey: "user-uploads/1731159494389.jpg" };
 
 			if (uploadData.objectKey) {
 				try {
@@ -67,7 +90,6 @@ export function ImageChecker() {
 					if (detectResponse.status === 200) {
 						// Mocked label data
 						detectData.labels = [{ Confidence: 91 }];
-
 						setLabels(detectData.labels || []);
 						setUploadStatus("");
 						setIsSuccess(true);
@@ -83,7 +105,20 @@ export function ImageChecker() {
 	};
 
 	const handleProceed = () => {
-		console.log("Proceeding to the next step...");
+		setSelectedFile(null);
+		setPreviewUrl(null);
+		setLabels([]);
+		setUploadStatus("");
+
+		// If on the last step, navigate to the next page
+		if (currentStepIndex === steps.length - 1) {
+			alert("Finished")
+			// router.push("/next-step");
+		} else {
+			// Otherwise, move to the next step
+			setCurrentStepIndex(currentStepIndex + 1);
+			setIsSuccess(false); // Reset success status when moving to the next step
+		}
 	};
 
 	return (
@@ -92,16 +127,14 @@ export function ImageChecker() {
 				<CardBody className="text-center flex flex-row gap-16">
 					<div className="flex flex-col items-center gap-20">
 						<Typography variant="h3" color="blue-gray" className="mb-2">
-							Driver Shoe Check (1/31)
+							{steps[currentStepIndex].title}
 						</Typography>
 						<div>
 							<Image src={"logoipsum.svg"} height={150} width={150} alt={"logo"} />
 						</div>
-						{/* Benefits :
-						<ul>
-							<li>good for everyone</li>
-							<li>keeps you safe</li>
-						</ul> */}
+						<Typography variant="h6" color="blue-gray" className="mb-2">
+							{steps[currentStepIndex].description}
+						</Typography>
 					</div>
 					<div className="">
 						<UploadImage
@@ -112,12 +145,12 @@ export function ImageChecker() {
 							isUploadDisabled={isSuccess}
 						/>
 						{labels.length > 0 && <Result labels={labels} />}
-						{/* Display upload status if available */}
 						{uploadStatus && (
 							<p className={`text-sm mt-3 ${isSuccess ? "text-green-500" : "text-gray-600"}`}>
 								{uploadStatus}
 							</p>
 						)}
+
 						<CardFooter>
 							<Button
 								onClick={isSuccess ? handleProceed : handleUpload}
@@ -129,7 +162,6 @@ export function ImageChecker() {
 					</div>
 				</CardBody>
 			</div>
-
 		</Card>
 	);
 }
