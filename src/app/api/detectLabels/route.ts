@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 			console.log("Project version is not ready. Please try again later.");
 			return NextResponse.json(
 				{ error: "Project version is not ready. Please try again later." },
-				{ status: 500 }
+				{ status: 200 }
 			);
 		}
 
