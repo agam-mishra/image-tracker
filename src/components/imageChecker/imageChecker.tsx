@@ -5,6 +5,7 @@ import { Button, Card, CardBody, CardFooter, Typography } from "@material-tailwi
 import UploadImage from "../imageUpload/imageUpload";
 import Result from "../result/result";
 import Image from "next/image";
+import { log } from "console";
 
 interface Label {
 	Name: string;
@@ -12,7 +13,7 @@ interface Label {
 }
 
 interface Step {
-	id: string;
+	label: string;
 	title: string;
 	description: string;
 }
@@ -23,23 +24,24 @@ export function ImageChecker() {
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [uploadStatus, setUploadStatus] = useState<string>("");
 	const [labels, setLabels] = useState<Label[]>([]);
+	const [showResult, setShowResult] = useState<boolean>(false);
 	const [isSuccess, setIsSuccess] = useState<boolean>(false);
 	const [currentStepIndex, setCurrentStepIndex] = useState<number>(0); // Index of the current step
 
 	// Define the steps array
 	const steps: Step[] = [
 		{
-			id: "shoe",
+			label: "shoes",
 			title: "Driver Shoe Check (1/31)",
 			description: "Please upload an image of the driver's shoe",
 		},
 		{
-			id: "plate",
+			label: "numberPlate",
 			title: "Truck Plate Check (2/31)",
 			description: "Please upload an image of the truck plate number",
 		},
 		{
-			id: "mudguard",
+			label: "mudguard",
 			title: "Truck Mudguard Check (3/31)",
 			description: "Please upload an image of the truck mudguard",
 		},
@@ -67,13 +69,36 @@ export function ImageChecker() {
 			const base64Image = reader.result as string;
 			setUploadStatus("Uploading...");
 
-			let uploadData = { imageUrl: "", objectKey: "user-uploads/1731159494389.jpg" };
+			let uploadData;
 
+			// Upload the image
+			try {
+				setLabels([]);
+
+				const uploadResponse = await fetch('/api/uploadImageS3', {
+					method: 'POST',
+
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ image: base64Image }),
+				});
+
+				uploadData = await uploadResponse.json();
+				console.log("Upload data is:", JSON.stringify(uploadData));
+			}
+			catch (error) {
+				console.error("Error:", error);
+				setUploadStatus("An error occurred during upload");
+			}
+
+			//uploadData = { imageUrl: "https://custom-labels-console-ap-south-1-c4254cce40.s3.amazonaws.com/user-uploads/1731328523045.jpg", objectKey: "user-uploads/1731328523045.jpg" }
+
+			//detect labels
 			if (uploadData.objectKey) {
 				try {
-					setUploadStatus("Image uploaded. Detecting labels...");
+					setUploadStatus("Image uploaded. Detecting labels...")
+					setShowResult(false)
 
-					const detectResponse = await fetch("/api/detectLabels", {
+					const detectResponse = await fetch(`/api/${steps[currentStepIndex].label}`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({ objectKey: uploadData.objectKey }),
@@ -81,18 +106,34 @@ export function ImageChecker() {
 
 					const statusCode = detectResponse.status;
 					const detectData = await detectResponse.json();
+					console.log("detected data is ", detectResponse.status);
+
 
 					if (statusCode === 503) {
 						setUploadStatus(detectData.error);
 						return;
 					}
 
-					if (detectResponse.status === 200) {
-						// Mocked label data
-						detectData.labels = [{ Confidence: 91 }];
+					// Mocked label data
+					//detectData.labels = [{ Confidence: 91, Name: "shoes" }]; //delete this
+
+					if (detectResponse.status === 200 && detectData.labels.length > 0) {
+
 						setLabels(detectData.labels || []);
-						setUploadStatus("");
-						setIsSuccess(true);
+						setShowResult(true)
+						console.log("inside id ", detectData.labels);
+
+						if (detectData.labels[0].Name == steps[currentStepIndex].label && detectData.labels[0].Confidence >= 60) {
+							setUploadStatus("");
+							setIsSuccess(true);
+						}
+						else {
+							setUploadStatus("Image not clear. Try again.");
+							setIsSuccess(false);
+						}
+					}
+					else {
+						setUploadStatus("Please try again.");
 					}
 				} catch (error) {
 					console.error("Error:", error);
@@ -144,7 +185,7 @@ export function ImageChecker() {
 							uploadStatus={uploadStatus}
 							isUploadDisabled={isSuccess}
 						/>
-						{labels.length > 0 && <Result labels={labels} />}
+						{showResult ? <Result success={isSuccess} labels={labels} /> : ""}
 						{uploadStatus && (
 							<p className={`text-sm mt-3 ${isSuccess ? "text-green-500" : "text-gray-600"}`}>
 								{uploadStatus}
