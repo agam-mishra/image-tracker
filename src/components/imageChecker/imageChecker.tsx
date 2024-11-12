@@ -86,25 +86,25 @@ export function ImageChecker() {
 			let uploadData;
 
 			// Upload the image
-			try {
-				setLabels([]);
+			// try {
+			// 	setLabels([]);
 
-				const uploadResponse = await fetch('/api/uploadImageS3', {
-					method: 'POST',
+			// 	const uploadResponse = await fetch('/api/uploadImageS3', {
+			// 		method: 'POST',
 
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ image: base64Image }),
-				});
+			// 		headers: { 'Content-Type': 'application/json' },
+			// 		body: JSON.stringify({ image: base64Image }),
+			// 	});
 
-				uploadData = await uploadResponse.json();
-				console.log("Upload data is:", JSON.stringify(uploadData));
-			}
-			catch (error) {
-				console.error("Error:", error);
-				setUploadStatus("An error occurred during upload");
-			}
+			// 	uploadData = await uploadResponse.json();
+			// 	console.log("Upload data is:", JSON.stringify(uploadData));
+			// }
+			// catch (error) {
+			// 	console.error("Error:", error);
+			// 	setUploadStatus("An error occurred during upload");
+			// }
 
-			//uploadData = { imageUrl: "https://custom-labels-console-ap-south-1-c4254cce40.s3.amazonaws.com/user-uploads/1731328523045.jpg", objectKey: "user-uploads/1731328523045.jpg" }
+			uploadData = { imageUrl: "https://custom-labels-console-ap-south-1-c4254cce40.s3.amazonaws.com/user-uploads/1731328523045.jpg", objectKey: "user-uploads/1731328523045.jpg" }
 
 			//detect labels
 			if (uploadData.objectKey) {

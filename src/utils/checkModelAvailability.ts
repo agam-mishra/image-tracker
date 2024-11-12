@@ -1,19 +1,15 @@
 import { RekognitionClient, DescribeProjectVersionsCommand } from "@aws-sdk/client-rekognition";
 
-export async function checkProjectVersionStatus(client: RekognitionClient, projectVersionArn: string, versionName: string): Promise<boolean> {
+export async function checkProjectVersionStatus(client: RekognitionClient, projectArn: string, versionName: string): Promise<boolean> {
 	try {
 
-		console.log("----projectVersionArn-----", projectVersionArn);
-
-		// If either part is missing, throw an error to make troubleshooting easier
-		if (!projectVersionArn || !versionName) {
+		if (!projectArn || !versionName) {
 			throw new Error("Invalid project version ARN format.");
 		}
 
-
 		const command = new DescribeProjectVersionsCommand({
-			ProjectArn: projectVersionArn,
-			//VersionNames: [versionName], // Extracted version name
+			ProjectArn: projectArn,
+			VersionNames: [versionName], // Extracted version name
 		});
 
 		const data = await client.send(command);
@@ -24,5 +20,28 @@ export async function checkProjectVersionStatus(client: RekognitionClient, proje
 	} catch (error) {
 		console.error("Error checking project version status:", error);
 		return false;
+	}
+}
+
+/**
+ * Method to extract projectArn and versionNames of model.
+ */
+export async function extractProjectArn(projectVersionArn: string) {
+	const regex = /^arn:aws:rekognition:[a-z\d-]+:[\d]+:project\/([a-zA-Z0-9_.\-]+)\/version\/([a-zA-Z0-9_.\-]+)\/(\d+)$/;
+
+	// Match the version ARN with the regex
+	const match = projectVersionArn.match(regex);
+
+	if (match) {
+		const name = `arn:aws:rekognition:${projectVersionArn.split(':')[3]}:${projectVersionArn.split(':')[4]}:project/${match[1]}`;
+		const versionName = match[2];
+		const versionId = match[3];
+		const projectArn = name + "/" + versionId;
+
+		return {
+			projectArn, versionName
+		}
+	} else {
+		return null
 	}
 }

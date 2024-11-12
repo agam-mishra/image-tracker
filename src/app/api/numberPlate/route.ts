@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { RekognitionClient, DetectCustomLabelsCommand } from "@aws-sdk/client-rekognition";
-import { checkProjectVersionStatus } from '@/utils/checkModelAvailability';
+import { checkProjectVersionStatus, extractProjectArn } from '@/utils/checkModelAvailability';
 
 interface DetectLabelsResponse {
 	labels?: object[];
@@ -10,6 +10,8 @@ interface DetectLabelsResponse {
 
 
 export async function POST(request: Request) {
+	let isReady;
+
 	try {
 		const { objectKey } = await request.json();
 
@@ -28,21 +30,22 @@ export async function POST(request: Request) {
 			},
 		});
 
-		const projectVersionArn = process.env.NUMBERPLATE_PROJECT_ARN as string;
-		const versionName = process.env.NUMBERPLATE_PROJECT_VERSION as string;
-
-		// Check if the project version is ready
-
-		const isReady = await checkProjectVersionStatus(client, projectVersionArn, versionName);
+		const projectVersionArn = process.env.NUMBERPLATE_PROJECT_VERSION_ARN as string;
+		const projectDetails = await extractProjectArn(projectVersionArn)
+		if (projectDetails) {
+			isReady = await checkProjectVersionStatus(client, projectDetails.projectArn, projectDetails.versionName);
+		} else {
+			console.error('Project Version ARN is not valid.');
+		}
 
 		//check model availability
-		// if (!isReady) {
-		// 	console.log("Number plate version is not ready. Please try again later.");
-		// 	return NextResponse.json(
-		// 		{ error: "Number plate version is not ready. Please try again later." },
-		// 		{ status: 503 }
-		// 	);
-		// }
+		if (!isReady) {
+			console.log("Number plate version is not ready. Please try again later.");
+			return NextResponse.json(
+				{ error: "Number plate version is not ready. Please try again later." },
+				{ status: 503 }
+			);
+		}
 
 		const command = new DetectCustomLabelsCommand({
 			ProjectVersionArn: projectVersionArn,
