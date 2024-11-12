@@ -32,19 +32,19 @@ export function ImageChecker() {
 	const steps: Step[] = [
 		{
 			label: "shoes",
-			title: "Driver Shoe Check (1/31)",
+			title: "Driver Shoe Check (1/2)",
 			description: "Please upload an image of the driver's shoe",
 		},
 		{
 			label: "numberPlate",
-			title: "Truck Plate Check (2/31)",
+			title: "Number Plate Check (2/2)",
 			description: "Please upload an image of the truck plate number",
 		},
-		{
-			label: "mudguard",
-			title: "Truck Mudguard Check (3/31)",
-			description: "Please upload an image of the truck mudguard",
-		},
+		// {
+		// 	label: "mudguard",
+		// 	title: "Truck Mudguard Check (3/31)",
+		// 	description: "Please upload an image of the truck mudguard",
+		// },
 	];
 
 	// Generate a preview URL when a file is selected
@@ -154,7 +154,12 @@ export function ImageChecker() {
 		// If on the last step, navigate to the next page
 		if (currentStepIndex === steps.length - 1) {
 			alert("Finished")
-			// router.push("/next-step");
+			setSelectedFile(null);
+			setPreviewUrl(null);
+			setLabels([]);
+			setUploadStatus("");
+			setIsSuccess(false)
+			setCurrentStepIndex(0)
 		} else {
 			// Otherwise, move to the next step
 			setCurrentStepIndex(currentStepIndex + 1);
@@ -175,7 +180,13 @@ export function ImageChecker() {
 						</div>
 						<Typography variant="h6" color="blue-gray" className="mb-2">
 							{steps[currentStepIndex].description}
+
+							<Typography color="blue-gray" className="mt-4 text-sm text-left font-medium text-blue-400 " >
+								Powered By: MVS Infra Pvt Ltd.
+							</Typography>
 						</Typography>
+
+
 					</div>
 					<div className="">
 						<UploadImage

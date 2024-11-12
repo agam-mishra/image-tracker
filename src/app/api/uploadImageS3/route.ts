@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 		});
 
 		// Define the object key (file path) in the S3 bucket
-		const objectKey = `user-uploads/${Date.now()}.jpg`; // Dynamic filename with timestamp
+		const objectKey = `user-uploads/Agam-${Date.now()}.jpg`; // Dynamic filename with timestamp
 
 		const uploadParams = {
 			Bucket: process.env.AWS_S3_BUCKET_NAME as string, // Replace with your bucket name
