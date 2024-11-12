@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardBody, CardFooter, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, CardFooter, Input, Typography } from "@material-tailwind/react";
 import UploadImage from "../imageUpload/imageUpload";
 import Result from "../result/result";
 import Image from "next/image";
-import { log } from "console";
+import DriverInformation from "../driverInformation/driverInformation";
+import Popup from "../popup/popup";
 
 interface Label {
 	Name: string;
@@ -26,23 +27,32 @@ export function ImageChecker() {
 	const [labels, setLabels] = useState<Label[]>([]);
 	const [showResult, setShowResult] = useState<boolean>(false);
 	const [isSuccess, setIsSuccess] = useState<boolean>(false);
-	const [currentStepIndex, setCurrentStepIndex] = useState<number>(0); // Index of the current step
+	const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+	const [info, setInfo] = useState({ driverName: "", destination: "" });
+	const [showPopup, setShowPopup] = useState(false);
+	const [popupContent, setPopupContent] = useState({ heading: "", description: "" })
+
 
 	// Define the steps array
 	const steps: Step[] = [
 		{
+			label: "info",
+			title: "Driver Information",
+			description: "Enter name of driver and vehicle destination.",
+		},
+		{
 			label: "shoes",
-			title: "Driver Shoe Check (1/31)",
+			title: "Driver Shoe Check",
 			description: "Please upload an image of the driver's shoe",
 		},
 		{
 			label: "numberPlate",
-			title: "Truck Plate Check (2/31)",
+			title: "Truck Plate Check",
 			description: "Please upload an image of the truck plate number",
 		},
 		{
 			label: "mudguard",
-			title: "Truck Mudguard Check (3/31)",
+			title: "Truck Mudguard Check",
 			description: "Please upload an image of the truck mudguard",
 		},
 	];
@@ -59,7 +69,11 @@ export function ImageChecker() {
 
 	const handleUpload = async () => {
 		if (!selectedFile) {
-			alert("Please select an image first!");
+			setPopupContent({
+				heading: "Information Missing",
+				description: steps[currentStepIndex]?.description
+			})
+			setShowPopup(true)
 			return;
 		}
 
@@ -114,9 +128,6 @@ export function ImageChecker() {
 						return;
 					}
 
-					// Mocked label data
-					//detectData.labels = [{ Confidence: 91, Name: "shoes" }]; //delete this
-
 					if (detectResponse.status === 200 && detectData.labels.length > 0) {
 
 						setLabels(detectData.labels || []);
@@ -151,58 +162,69 @@ export function ImageChecker() {
 		setLabels([]);
 		setUploadStatus("");
 
-		// If on the last step, navigate to the next page
 		if (currentStepIndex === steps.length - 1) {
-			alert("Finished")
+			setPopupContent({
+				heading: "Finished",
+				description: ""
+			})
+			setShowPopup(true)
 			// router.push("/next-step");
 		} else {
-			// Otherwise, move to the next step
 			setCurrentStepIndex(currentStepIndex + 1);
-			setIsSuccess(false); // Reset success status when moving to the next step
+			setIsSuccess(false);
 		}
 	};
 
 	return (
 		<Card className="w-2/3 h-max flex justify-center items-center">
-			<div className="flex justify-center items-center">
-				<CardBody className="text-center flex flex-row gap-16">
-					<div className="flex flex-col items-center gap-20">
-						<Typography variant="h3" color="blue-gray" className="mb-2">
-							{steps[currentStepIndex].title}
-						</Typography>
-						<div>
-							<Image src={"logoipsum.svg"} height={150} width={150} alt={"logo"} />
-						</div>
-						<Typography variant="h6" color="blue-gray" className="mb-2">
-							{steps[currentStepIndex].description}
-						</Typography>
+			<CardBody className="text-center flex flex-row gap-16">
+				<div className="flex flex-col items-center gap-20">
+					<Typography variant="h3" color="blue-gray" className="mb-2">
+						{steps[currentStepIndex]?.title}({currentStepIndex + 1}/{steps.length})
+					</Typography>
+					<div>
+						<Image src={"logoipsum.svg"} height={150} width={150} alt={"logo"} />
 					</div>
-					<div className="">
-						<UploadImage
-							selectedFile={selectedFile}
-							setSelectedFile={setSelectedFile}
-							previewUrl={previewUrl}
-							uploadStatus={uploadStatus}
-							isUploadDisabled={isSuccess}
-						/>
-						{showResult ? <Result success={isSuccess} labels={labels} /> : ""}
-						{uploadStatus && (
-							<p className={`text-sm mt-3 ${isSuccess ? "text-green-500" : "text-gray-600"}`}>
-								{uploadStatus}
-							</p>
-						)}
-
-						<CardFooter>
-							<Button
-								onClick={isSuccess ? handleProceed : handleUpload}
-								disabled={uploadStatus === "Uploading..."}
-							>
-								{isSuccess ? "Proceed" : "Submit"}
-							</Button>
-						</CardFooter>
-					</div>
-				</CardBody>
-			</div>
-		</Card>
-	);
+					<Typography variant="h6" color="blue-gray" className="mb-2">
+						{steps[currentStepIndex]?.description}
+					</Typography>
+				</div>
+				<div className="min-h-96">
+					{currentStepIndex === 0 ? (
+						<DriverInformation info={info} setInfo={setInfo} setCurrentStepIndex={setCurrentStepIndex} />
+					) : (
+						<>
+							<UploadImage
+								selectedFile={selectedFile}
+								setSelectedFile={setSelectedFile}
+								previewUrl={previewUrl}
+								uploadStatus={uploadStatus}
+								isUploadDisabled={isSuccess}
+							/>
+							{showResult ? <Result success={isSuccess} labels={labels} /> : ""}
+							{uploadStatus && (
+								<p className={`text-sm mt-3 ${isSuccess ? "text-green-500" : "text-gray-600"}`}>
+									{uploadStatus}
+								</p>
+							)}
+							<CardFooter>
+								<Button
+									onClick={isSuccess ? handleProceed : handleUpload}
+									disabled={uploadStatus === "Uploading..."}
+								>
+									{isSuccess ? "Proceed" : "Submit"}
+								</Button>
+							</CardFooter>
+						</>
+					)}
+				</div>
+				{showPopup && <Popup
+					closePopup={() => setShowPopup(false)}
+					popupContent={popupContent}
+					size="xs"
+				/>
+				}
+			</CardBody>
+		</Card >
+	)
 }

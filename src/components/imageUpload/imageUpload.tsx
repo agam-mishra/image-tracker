@@ -13,7 +13,6 @@ export default function UploadImage({
 	selectedFile,
 	setSelectedFile,
 	previewUrl,
-	uploadStatus,
 	isUploadDisabled,
 }: UploadImageProps) {
 	const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
