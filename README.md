@@ -28,13 +28,13 @@ This project is a Next.js application designed to handle a multi-step image-chec
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/your-username/your-repo.git
+    git clone https://github.com/agam-mishra/image-tracker.git
     ```
 
 2. Navigate to the project directory:
 
     ```bash
-    cd your-repo
+    cd image-tracker
     ```
 
 3. Install dependencies:
